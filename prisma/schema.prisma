@@ -1,0 +1,297 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum UserRole {
+  COMPANY
+  ADMIN
+}
+
+enum CompanyStatus {
+  PENDING
+  APPROVED
+  BLOCKED
+}
+
+enum CarCondition {
+  NEW
+  USED
+}
+
+enum RequestStatus {
+  NEW
+  ACTIVE
+  CLOSED
+  EXPIRED
+  CANCELLED
+}
+
+enum OfferStatus {
+  ACTIVE
+  WITHDRAWN
+}
+
+enum DurationUnit {
+  HOURS
+  DAYS
+}
+
+enum AnalyticsEventType {
+  REQUEST_CREATED
+  REQUEST_VIEWED
+  OFFER_CREATED
+  OFFER_UPDATED
+  OFFER_IMPRESSION
+  CONTACT_REVEAL
+  PHONE_CLICK
+  WHATSAPP_CLICK
+  INSTAGRAM_CLICK
+  TWO_GIS_CLICK
+}
+
+enum NotificationChannel {
+  CONSOLE
+  EMAIL
+  SMS
+  WHATSAPP
+  TELEGRAM
+  PUSH
+}
+
+enum NotificationRecipientType {
+  CLIENT
+  COMPANY
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+// ---------------------------------------------------------------------------
+// Auth
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         UserRole
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company Company?
+
+  @@index([role])
+}
+
+// ---------------------------------------------------------------------------
+// Catalog
+// ---------------------------------------------------------------------------
+
+model City {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  countryCode String   @default("KZ")
+  createdAt   DateTime @default(now())
+
+  companies Company[]
+  requests  Request[]
+}
+
+model Service {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  requestServices RequestService[]
+}
+
+// ---------------------------------------------------------------------------
+// Company
+// ---------------------------------------------------------------------------
+
+model Company {
+  id           String        @id @default(cuid())
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  slug         String        @unique
+  description  String?
+  logoUrl      String?
+  phone        String?
+  whatsapp     String?
+  instagram    String?
+  twoGisUrl    String?
+  address      String?
+  cityId       String
+  city         City          @relation(fields: [cityId], references: [id])
+  extraLinks   Json?
+  workingHours Json?
+  status       CompanyStatus @default(PENDING)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  offers          Offer[]
+  contactReveals  ContactReveal[]
+  analyticsEvents AnalyticsEvent[]
+
+  @@index([status])
+  @@index([cityId])
+}
+
+// ---------------------------------------------------------------------------
+// Request (client)
+// ---------------------------------------------------------------------------
+
+model Request {
+  id               String        @id @default(cuid())
+  publicId         String        @unique
+  accessTokenHash  String        @unique
+  cityId           String
+  city             City          @relation(fields: [cityId], references: [id])
+  carBrand         String
+  carModel         String
+  carYear          Int?
+  carCondition     CarCondition
+  customerName     String
+  customerPhone    String
+  customerWhatsapp String?
+  comment          String?
+  desiredDate      DateTime?
+  status           RequestStatus @default(ACTIVE)
+  expiresAt        DateTime
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  services        RequestService[]
+  images          RequestImage[]
+  offers          Offer[]
+  contactReveals  ContactReveal[]
+  analyticsEvents AnalyticsEvent[]
+
+  @@index([status, expiresAt])
+  @@index([cityId])
+  @@index([createdAt])
+}
+
+model RequestService {
+  id        String  @id @default(cuid())
+  requestId String
+  request   Request @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
+
+  @@unique([requestId, serviceId])
+  @@index([serviceId])
+}
+
+model RequestImage {
+  id        String   @id @default(cuid())
+  requestId String
+  request   Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  url       String
+  createdAt DateTime @default(now())
+
+  @@index([requestId])
+}
+
+// ---------------------------------------------------------------------------
+// Offer
+// ---------------------------------------------------------------------------
+
+model Offer {
+  id              String       @id @default(cuid())
+  requestId       String
+  request         Request      @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  companyId       String
+  company         Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  price           Int
+  currency        String       @default("KZT")
+  durationValue   Int
+  durationUnit    DurationUnit
+  availableAt     DateTime
+  comment         String?
+  oldPrice        Int?
+  discountPercent Int?
+  guarantee       String?
+  extraConditions String?
+  status          OfferStatus  @default(ACTIVE)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  contactReveals  ContactReveal[]
+  analyticsEvents AnalyticsEvent[]
+
+  @@unique([requestId, companyId])
+  @@index([requestId])
+  @@index([companyId])
+}
+
+// ---------------------------------------------------------------------------
+// Analytics
+// ---------------------------------------------------------------------------
+
+model ContactReveal {
+  id        String   @id @default(cuid())
+  requestId String
+  request   Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  offerId   String
+  offer     Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+  @@index([requestId, offerId])
+}
+
+model AnalyticsEvent {
+  id        String             @id @default(cuid())
+  type      AnalyticsEventType
+  requestId String?
+  request   Request?           @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  offerId   String?
+  offer     Offer?             @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  companyId String?
+  company   Company?           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  metadata  Json?
+  createdAt DateTime           @default(now())
+
+  @@index([companyId, type, createdAt])
+  @@index([requestId])
+  @@index([offerId])
+  @@index([type, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications (abstraction, MVP no-op/console provider)
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id            String                    @id @default(cuid())
+  channel       NotificationChannel
+  recipientType NotificationRecipientType
+  recipientId   String
+  type          String
+  payload       Json
+  status        NotificationStatus        @default(PENDING)
+  createdAt     DateTime                  @default(now())
+  sentAt        DateTime?
+
+  @@index([recipientType, recipientId])
+}

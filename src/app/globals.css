@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f7f7f5;
+  --foreground: #131316;
+
+  --surface: #ffffff;
+  --surface-muted: #f0efec;
+  --border: #e6e4df;
+
+  --ink: #131316;
+  --ink-soft: #55555c;
+  --ink-faint: #8b8b91;
+
+  --brand: #ff5a1f;
+  --brand-ink: #ffffff;
+  --brand-soft: #fff1ea;
+
+  --accent-dark: #0d0d10;
+  --accent-dark-soft: #1c1c21;
+
+  --success: #16a34a;
+  --success-soft: #e9f9ef;
+  --danger: #dc2626;
+  --danger-soft: #fdecec;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+
+  --color-accent-dark: var(--accent-dark);
+  --color-accent-dark-soft: var(--accent-dark-soft);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--brand);
+  color: var(--brand-ink);
+}
