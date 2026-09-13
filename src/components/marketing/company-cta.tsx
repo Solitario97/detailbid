@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { buttonVariants } from "@/components/ui/button";
 
 export function CompanyCta() {
@@ -23,7 +24,10 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-border py-10">
       <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 px-4 text-sm text-ink-faint sm:flex-row sm:items-center sm:px-6">
-        <p>© {new Date().getFullYear()} DetailBid</p>
+        <div className="flex items-center gap-2">
+          <Image src="/autopick-logo.png" alt="AutoPick" width={40} height={40} className="rounded-xl object-contain" />
+          <p>© {new Date().getFullYear()}</p>
+        </div>
         <div className="flex gap-6">
           <Link href="/company/login" className="hover:text-ink-soft">Вход для компаний</Link>
           <Link href="/admin/login" className="hover:text-ink-soft">Админ</Link>

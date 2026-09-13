@@ -1,4 +1,4 @@
-# DetailBid — Database Schema
+# AutoPick — Database Schema
 
 PostgreSQL via Prisma. See `prisma/schema.prisma` for the source of truth;
 this document explains the design decisions.

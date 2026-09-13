@@ -6,7 +6,7 @@ import { jwtVerify } from "jose";
 // route handler re-verifies the session and role server-side regardless.
 // Next.js 16 renamed `middleware.ts` to `proxy.ts`; functionality is the same.
 
-const SESSION_COOKIE = "detailbid_session";
+const SESSION_COOKIE = "autopick_session";
 
 const PUBLIC_COMPANY_PATHS = ["/company/login", "/company/register"];
 const PUBLIC_ADMIN_PATHS = ["/admin/login"];

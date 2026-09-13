@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { CompanyLoginForm } from "@/components/company/auth-forms";
 
 export default function CompanyLoginPage() {
@@ -6,8 +7,7 @@ export default function CompanyLoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
       <div className="w-full max-w-sm">
         <Link href="/" className="mb-8 flex items-center justify-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent-dark text-sm font-bold text-white">D</span>
-          <span className="text-[17px] font-semibold text-ink">DetailBid</span>
+          <Image src="/autopick-logo.png" alt="AutoPick" width={96} height={96} className="rounded-2xl object-contain" />
         </Link>
         <h1 className="mb-6 text-center text-xl font-semibold tracking-tight text-ink">Кабинет детейлинг-компании</h1>
         <CompanyLoginForm />

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { RequestSummaryCard } from "@/components/client/request-summary-card";
 import { OfferCard } from "@/components/client/offer-card";
 import { Select } from "@/components/ui/input";
@@ -37,7 +38,7 @@ export function ClientRequestView({
 
   React.useEffect(() => {
     try {
-      localStorage.setItem(`detailbid:request:${publicId}`, JSON.stringify({ token, createdAt: Date.now() }));
+      localStorage.setItem(`autopick:request:${publicId}`, JSON.stringify({ token, createdAt: Date.now() }));
     } catch {
       // ignore
     }
@@ -114,8 +115,7 @@ export function ClientRequestView({
       <div className="border-b border-border bg-surface">
         <div className="mx-auto flex h-16 max-w-3xl items-center px-4">
           <Link href="/" className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-dark text-xs font-bold text-white">D</span>
-            <span className="text-sm font-semibold text-ink">DetailBid</span>
+            <Image src="/autopick-logo.png" alt="AutoPick" width={56} height={56} className="rounded-xl object-contain" />
           </Link>
         </div>
       </div>

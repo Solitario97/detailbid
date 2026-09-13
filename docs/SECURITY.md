@@ -1,4 +1,4 @@
-# DetailBid — Security & Privacy Model
+# AutoPick — Security & Privacy Model
 
 ## 1. The core invariant
 
@@ -58,7 +58,7 @@ layer.** This is enforced structurally, not by convention:
   entropy nanoid used only for routing/display, never sufficient on its
   own to authorize anything.
 - The token is mirrored into `localStorage` under
-  `detailbid:request:{publicId}` purely for the "continue where I left
+  `autopick:request:{publicId}` purely for the "continue where I left
   off" convenience (auto-fill on revisit); it is **never** treated as a
   trusted identity by the server — every request still validates the hash
   server-side.

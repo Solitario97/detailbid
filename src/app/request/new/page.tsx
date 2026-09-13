@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { listCities, listActiveServices } from "@/modules/catalog/service";
 import { RequestWizard } from "@/components/client/request-wizard";
 
@@ -11,8 +12,7 @@ export default async function NewRequestPage() {
     <main className="flex min-h-screen flex-col bg-background">
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-8 sm:py-12">
         <Link href="/" className="mb-6 flex items-center gap-2 self-start">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent-dark text-xs font-bold text-white">D</span>
-          <span className="text-sm font-semibold text-ink">DetailBid</span>
+          <Image src="/autopick-logo.png" alt="AutoPick" width={64} height={64} className="rounded-2xl object-contain" />
         </Link>
         <RequestWizard
           cities={cities.map((c) => ({ id: c.id, name: c.name }))}

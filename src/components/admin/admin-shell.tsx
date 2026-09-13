@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { LogOut } from "lucide-react";
@@ -30,7 +31,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <div className="flex">
         <aside className="hidden w-56 shrink-0 border-r border-border bg-accent-dark px-4 py-6 lg:block">
           <Link href="/admin" className="mb-8 flex items-center gap-2 px-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand text-xs font-bold text-white">D</span>
+            <Image src="/autopick-logo.png" alt="AutoPick" width={40} height={40} className="rounded-lg object-contain" />
             <span className="text-sm font-semibold text-white">Admin</span>
           </Link>
           <nav className="space-y-1">

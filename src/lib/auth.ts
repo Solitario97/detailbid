@@ -15,7 +15,7 @@ import { env } from "@/lib/env";
 // this module is not the sole authorization boundary.
 // ---------------------------------------------------------------------------
 
-const SESSION_COOKIE = "detailbid_session";
+const SESSION_COOKIE = "autopick_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
 const secretKey = new TextEncoder().encode(env.authSecret);

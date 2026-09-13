@@ -1,4 +1,4 @@
-# DetailBid — Architecture
+# AutoPick — Architecture
 
 ## 1. Style: modular monolith
 
@@ -82,10 +82,25 @@ replace with SSE later behind the same endpoint contract.
 
 `modules/storage/` defines a `FileStorage` interface
 (`put(file) -> url`, `delete(url)`), with a `LocalFileStorage`
-implementation (writes to `/public/uploads` in dev) and a documented seam
-for an `S3FileStorage` implementation (same interface, swappable via
-`STORAGE_DRIVER` env var). Nothing in route handlers depends on the local
-implementation directly.
+implementation and a documented seam for an `S3FileStorage` implementation
+(same interface, swappable via `STORAGE_DRIVER` env var). Nothing in route
+handlers depends on the local implementation directly.
+
+`LocalFileStorage` writes to `env.uploadsDir` (`UPLOADS_DIR` env var,
+defaults to `<repo>/public/uploads` locally) and returns a relative
+`/uploads/<folder>/<filename>` URL. That URL is served by
+`src/app/uploads/[...path]/route.ts` — a real route handler that reads
+straight from `env.uploadsDir`, rather than relying on Next's automatic
+`public/` static passthrough. This matters in production: **Railway's
+container filesystem is ephemeral** — anything written to local disk at
+runtime (including `public/`) is discarded on every redeploy, restart, or
+when a new instance is scheduled. Deploying this app on Railway therefore
+requires a **Railway Volume** mounted at some path (e.g. `/data`), with
+`UPLOADS_DIR=/data/uploads` set so both the writer (`LocalFileStorage.put`)
+and the reader (the `/uploads` route) agree on the same persisted
+directory. Without a volume + `UPLOADS_DIR`, uploads work within a single
+running instance but vanish on the next deploy. See the README's
+"Production file storage (Railway)" section for the exact setup steps.
 
 ## 6. Extensibility seams (not built now, but not blocked)
 

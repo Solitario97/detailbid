@@ -1,21 +1,21 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: detailbid-postgres
+    container_name: autopick-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: detailbid
-      POSTGRES_PASSWORD: detailbid
-      POSTGRES_DB: detailbid
+      POSTGRES_USER: autopick
+      POSTGRES_PASSWORD: autopick
+      POSTGRES_DB: autopick
     ports:
       - '5432:5432'
     volumes:
-      - detailbid_pgdata:/var/lib/postgresql/data
+      - autopick_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U detailbid']
+      test: ['CMD-SHELL', 'pg_isready -U autopick']
       interval: 5s
       timeout: 5s
       retries: 10
 
 volumes:
-  detailbid_pgdata:
+  autopick_pgdata:

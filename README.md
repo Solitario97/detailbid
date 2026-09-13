@@ -1,6 +1,6 @@
-# DetailBid
+# AutoPick
 
-DetailBid is a two-sided marketplace for Kazakhstan connecting car owners with
+AutoPick is a two-sided marketplace for Kazakhstan connecting car owners with
 detailing companies. A client describes their car and the services they need
 (no registration required) and detailing companies in their city respond with
 priced offers. The client compares offers and, when ready, reveals a
@@ -38,7 +38,7 @@ docker compose up -d
 ```
 
 This starts Postgres 16 on `localhost:5432` with user/password/database all
-set to `detailbid`, matching `.env.example`. If you'd rather use a local
+set to `autopick`, matching `.env.example`. If you'd rather use a local
 Postgres install, just make sure a database matching `DATABASE_URL` exists.
 
 ### 2. Configure environment variables
@@ -90,16 +90,16 @@ idempotent-ish for demo purposes but is meant for a fresh database — see
 ## Tests
 
 Tests run against a **separate, isolated** database
-(`detailbid_test` by default) so `npm test` can never touch your dev data
+(`autopick_test` by default) so `npm test` can never touch your dev data
 or seeded demo content.
 
 ```bash
 # create the test database once (adjust user/host as needed):
-createdb -h localhost -U detailbid detailbid_test
+createdb -h localhost -U autopick autopick_test
 
 cp .env.test.example .env.test   # if you don't already have one — see below
-# .env.test should point DATABASE_URL at detailbid_test, e.g.:
-#   DATABASE_URL="postgresql://detailbid:detailbid@localhost:5432/detailbid_test?schema=public"
+# .env.test should point DATABASE_URL at autopick_test, e.g.:
+#   DATABASE_URL="postgresql://autopick:autopick@localhost:5432/autopick_test?schema=public"
 
 npx prisma migrate deploy   # apply migrations to the test DB
 # (run the line above with DATABASE_URL from .env.test in your shell env,
@@ -109,7 +109,7 @@ npm test
 ```
 
 `vitest.config.ts` loads `.env.test` automatically before the suite runs, so
-as long as `.env.test` exists and points at a migrated `detailbid_test`
+as long as `.env.test` exists and points at a migrated `autopick_test`
 database, `npm test` just works. The suite covers, among other things:
 
 - companies can never receive client PII, at the DTO layer and the raw
@@ -147,6 +147,45 @@ npm start
 ```
 
 All four should pass cleanly before deploying.
+
+## Production file storage (Railway)
+
+Uploaded files (client request photos, company logos) are written to disk
+by `LocalFileStorage` (`src/modules/storage/file-storage.ts`) and served
+back by `src/app/uploads/[...path]/route.ts`. Both read the same
+`UPLOADS_DIR` env var (see `src/lib/env.ts`), which defaults to
+`<repo>/public/uploads` — fine for local dev, **not fine on Railway**.
+
+Railway's container filesystem is ephemeral: anything written to local
+disk at runtime is discarded on every redeploy, restart, or when a new
+instance is scheduled. Without the setup below, uploads appear to work
+right after you upload them, then 404 the moment the app redeploys or
+restarts — the file is simply gone from the new container.
+
+To persist uploads on Railway:
+
+1. In the Railway dashboard, open this service → **Settings → Volumes** →
+   add a volume mounted at `/data`.
+2. Set the environment variable `UPLOADS_DIR=/data/uploads` on the
+   service (Settings → Variables).
+3. Redeploy. `LocalFileStorage` creates `/data/uploads/<folder>` on first
+   upload (`mkdir` with `recursive: true`) — no manual setup needed beyond
+   the volume + env var.
+
+Note that a Railway Volume attaches to a single service instance — this is
+fine for this MVP's scope (one instance) but won't work if you later scale
+this service horizontally. At that point, switch `STORAGE_DRIVER=s3` and
+implement `S3FileStorage` (the seam already exists in
+`src/modules/storage/file-storage.ts`) against S3-compatible object
+storage, which is the only option that's safe across multiple instances.
+
+Existing uploads made before a volume was attached cannot be recovered —
+the files are gone from the old container; only their now-broken
+`/uploads/...` URLs remain in the database (`Company.logoUrl`,
+`RequestImage.url`). Companies will need to re-upload their logo; old
+request photos on expired/closed requests are generally fine to leave as
+broken links, but see "Resetting your database" above if you'd rather
+clear them.
 
 ## Project structure
 

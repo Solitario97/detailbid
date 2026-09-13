@@ -112,7 +112,7 @@ export function RequestWizard({ cities, services }: { cities: Ref[]; services: R
 
       try {
         localStorage.setItem(
-          `detailbid:request:${data.publicId}`,
+          `autopick:request:${data.publicId}`,
           JSON.stringify({ token: data.token, createdAt: Date.now() })
         );
       } catch {

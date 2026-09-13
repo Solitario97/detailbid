@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "DetailBid — предложения от детейлинг-центров",
+  metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
+  title: "AutoPick — предложения от детейлинг-центров",
   description:
     "Опишите автомобиль и нужные услуги — детейлинг-центры вашего города сами предложат цену и дату приёма.",
 };

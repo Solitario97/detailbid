@@ -36,11 +36,26 @@ class LocalFileStorage implements FileStorage {
     assertValidUploadFile(file);
     const ext = (file.type.split("/")[1] || "bin").replace("jpeg", "jpg");
     const filename = `${randomUUID()}.${ext}`;
-    const dir = path.join(process.cwd(), "public", "uploads", folder);
-    await mkdir(dir, { recursive: true });
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(path.join(dir, filename), buffer);
-    return { url: `/uploads/${folder}/${filename}`, filename };
+    // env.uploadsDir is a Railway Volume mount path in production (e.g.
+    // "/data/uploads") and defaults to "<repo>/public/uploads" locally.
+    // It must match the directory the /uploads route reads from — see
+    // src/app/uploads/[...path]/route.ts.
+    const dir = path.join(env.uploadsDir, folder);
+    const fullPath = path.join(dir, filename);
+    try {
+      await mkdir(dir, { recursive: true });
+      const buffer = Buffer.from(await file.arrayBuffer());
+      await writeFile(fullPath, buffer);
+    } catch (err) {
+      console.error("[Upload] failed", {
+        path: fullPath,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      throw new Error("Не удалось сохранить файл");
+    }
+    const url = `/uploads/${folder}/${filename}`;
+    console.log("[Upload] file saved", { path: fullPath, url });
+    return { url, filename };
   }
 }
 

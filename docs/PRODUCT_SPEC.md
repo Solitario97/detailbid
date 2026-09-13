@@ -1,8 +1,8 @@
-# DetailBid — Product Specification
+# AutoPick — Product Specification
 
 ## 1. What it is
 
-DetailBid is a two-sided marketplace connecting car owners ("clients") with
+AutoPick is a two-sided marketplace connecting car owners ("clients") with
 detailing companies. A client posts a request describing their car and the
 services they want, without registering. Approved detailing companies see
 the request (without any client personal data), and submit price offers.
