@@ -40,8 +40,11 @@ class LocalFileStorage implements FileStorage {
     // "/data/uploads") and defaults to "<repo>/public/uploads" locally.
     // It must match the directory the /uploads route reads from — see
     // src/app/uploads/[...path]/route.ts.
-    const dir = path.join(env.uploadsDir, folder);
-    const fullPath = path.join(dir, filename);
+    // turbopackIgnore: this path is env-driven on purpose (see above) — it
+    // never reaches into the project's own source tree, so Turbopack's
+    // "trace the whole project" heuristic here is a false positive.
+    const dir = path.join(/* turbopackIgnore: true */ env.uploadsDir, folder);
+    const fullPath = path.join(/* turbopackIgnore: true */ dir, filename);
     try {
       await mkdir(dir, { recursive: true });
       const buffer = Buffer.from(await file.arrayBuffer());

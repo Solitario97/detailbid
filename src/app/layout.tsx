@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { env } from "@/lib/env";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(env.appUrl),
   title: "AutoPick — предложения от детейлинг-центров",
   description:
     "Опишите автомобиль и нужные услуги — детейлинг-центры вашего города сами предложат цену и дату приёма.",

@@ -14,12 +14,20 @@ function optionalInt(name: string, fallback: number): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+// Railway's own template variable (e.g. APP_URL=${{RAILWAY_PUBLIC_DOMAIN}})
+// resolves to a bare hostname with no scheme, which crashes `new URL(...)`
+// (see src/app/layout.tsx). Normalize defensively instead of trusting the
+// env var to already include "https://".
+function normalizeAbsoluteUrl(raw: string): string {
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+}
+
 export const env = {
   authSecret: optionalString(
     "AUTH_SECRET",
     "dev-insecure-secret-change-me-dev-insecure-secret-change-me"
   ),
-  appUrl: optionalString("APP_URL", "http://localhost:3000"),
+  appUrl: normalizeAbsoluteUrl(optionalString("APP_URL", "http://localhost:3000")),
   requestTtlDays: optionalInt("REQUEST_TTL_DAYS", 7),
   analyticsMinImpressionsForConversionRanking: optionalInt(
     "ANALYTICS_MIN_IMPRESSIONS_FOR_CONVERSION_RANKING",

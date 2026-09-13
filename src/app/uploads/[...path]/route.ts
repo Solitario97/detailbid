@@ -43,8 +43,11 @@ export async function GET(
     return NextResponse.json({ error: "Неподдерживаемый тип файла" }, { status: 400 });
   }
 
-  const root = path.resolve(env.uploadsDir);
-  const filePath = path.resolve(path.join(root, ...segments));
+  // turbopackIgnore: env.uploadsDir is env-driven on purpose (see the file
+  // header) and never reaches into the project's own source tree, so
+  // Turbopack's "trace the whole project" heuristic here is a false positive.
+  const root = path.resolve(/* turbopackIgnore: true */ env.uploadsDir);
+  const filePath = path.resolve(path.join(/* turbopackIgnore: true */ root, ...segments));
 
   // Defense in depth against path traversal, on top of the segment check above.
   if (filePath !== root && !filePath.startsWith(root + path.sep)) {
