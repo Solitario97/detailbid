@@ -11,8 +11,8 @@ export default async function NewRequestPage() {
   return (
     <main className="flex min-h-screen flex-col bg-background">
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 py-8 sm:py-12">
-        <Link href="/" className="mb-6 flex items-center gap-2 self-start">
-          <Image src="/autopick-logo.png" alt="AutoPick" width={64} height={64} className="rounded-2xl object-contain" />
+        <Link href="/" className="mb-6 flex items-center gap-2 self-center">
+          <Image src="/autopick-logo.png" alt="AutoPick" width={150} height={150} className="rounded-2xl object-contain" />
         </Link>
         <RequestWizard
           cities={cities.map((c) => ({ id: c.id, name: c.name }))}

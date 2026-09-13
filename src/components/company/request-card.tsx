@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CarThumbnail } from "@/components/ui/car-thumbnail";
 import { formatDateTime } from "@/lib/utils";
 import type { CompanyRequestDTO } from "@/modules/requests/dto";
 
@@ -43,8 +44,7 @@ export function CompanyRequestCard({
       {request.images.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
           {request.images.map((url) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={url} src={url} alt="" className="h-16 w-16 rounded-xl object-cover" />
+            <CarThumbnail key={url} src={url} alt={`${request.carBrand} ${request.carModel}`} />
           ))}
         </div>
       )}
