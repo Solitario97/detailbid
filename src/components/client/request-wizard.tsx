@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Textarea } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { saveActiveRequest } from "@/lib/client-request-storage";
 import { Check, Loader2 } from "lucide-react";
 
 type Ref = { id: string; name: string };
@@ -110,14 +111,7 @@ export function RequestWizard({ cities, services }: { cities: Ref[]; services: R
         return;
       }
 
-      try {
-        localStorage.setItem(
-          `autopick:request:${data.publicId}`,
-          JSON.stringify({ token: data.token, createdAt: Date.now() })
-        );
-      } catch {
-        // localStorage unavailable — the URL below still carries the token.
-      }
+      saveActiveRequest(data.publicId, data.token);
 
       router.push(`/r/${data.publicId}?t=${encodeURIComponent(data.token)}`);
     } catch {

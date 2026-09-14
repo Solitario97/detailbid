@@ -1,20 +1,10 @@
-import { SiteHeader } from "@/components/marketing/site-header";
-import { Hero } from "@/components/marketing/hero";
-import { HowItWorks } from "@/components/marketing/how-it-works";
-import { ExampleOffers } from "@/components/marketing/example-offers";
-import { CompanyCta, SiteFooter } from "@/components/marketing/company-cta";
+import { HomeGate } from "@/components/marketing/home-gate";
 
+// The landing page defers to a client component because restoring a
+// visitor's active request (see src/lib/client-request-storage.ts) needs
+// localStorage + a fetch, which only exist client-side. HomeGate renders
+// the exact same marketing sections this page used to render directly
+// once it determines there's nothing to restore.
 export default function LandingPage() {
-  return (
-    <>
-      <SiteHeader />
-      <main className="flex-1">
-        <Hero />
-        <HowItWorks />
-        <ExampleOffers />
-        <CompanyCta />
-      </main>
-      <SiteFooter />
-    </>
-  );
+  return <HomeGate />;
 }

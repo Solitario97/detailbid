@@ -8,6 +8,7 @@ import { OfferCard } from "@/components/client/offer-card";
 import { Select } from "@/components/ui/input";
 import type { PublicRequestDTO } from "@/modules/requests/dto";
 import type { OfferPublicDTO, OfferContactDTO } from "@/modules/offers/dto";
+import { saveActiveRequest } from "@/lib/client-request-storage";
 
 type Sort = "recommended" | "price_asc" | "price_desc" | "soonest" | "fastest";
 
@@ -36,12 +37,11 @@ export function ClientRequestView({
   const [sort, setSort] = React.useState<Sort>("recommended");
   const seenImpressions = React.useRef(new Set<string>());
 
+  // Keep the persistent "current active request" pointer fresh every time
+  // this page is viewed — covers a visitor who opens a `/r/...?t=...` link
+  // directly (email/bookmark) without having gone through the wizard first.
   React.useEffect(() => {
-    try {
-      localStorage.setItem(`autopick:request:${publicId}`, JSON.stringify({ token, createdAt: Date.now() }));
-    } catch {
-      // ignore
-    }
+    saveActiveRequest(publicId, token);
   }, [publicId, token]);
 
   React.useEffect(() => {
