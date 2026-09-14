@@ -43,7 +43,8 @@ accessTokenHash (unique, sha-256 hash of the plaintext token — the
 cityId (FK City), carBrand, carModel, carYear (nullable),
 carCondition (NEW|USED), customerName, customerPhone,
 customerWhatsapp (nullable), comment (nullable), desiredDate (nullable),
-status (NEW|ACTIVE|CLOSED|EXPIRED|CANCELLED), expiresAt, createdAt, updatedAt
+status (NEW|ACTIVE|CLOSED|EXPIRED|CANCELLED), expiresAt, createdAt, updatedAt,
+source (default "user")
 ```
 `publicId` is a short random slug used in the URL path; `accessTokenHash`
 is a separate, longer, higher-entropy secret whose plaintext is only ever
@@ -51,6 +52,21 @@ returned once (at creation) and passed by the client on every request.
 Splitting "which request" (publicId, low entropy ok, not secret) from
 "proof of ownership" (token, high entropy, secret) keeps URLs readable
 while keeping authorization cryptographically strong.
+
+`source` is `"user"` for every real client-submitted request and
+`"autopick_bot"` for synthetic requests created by the AutoPickBot
+scheduler (see `docs/AUTOPICK_BOT.md`). It is never read by any DTO,
+statistics query, or matching query — only by the bot's own 24h cleanup
+job and its log lines — so it never changes how a request behaves or
+counts.
+
+### BotJobExecution
+```
+id, key (unique), createdAt
+```
+Distributed-lock / idempotency ledger for the AutoPickBot scheduler — see
+`docs/AUTOPICK_BOT.md`. Unrelated to the client/company/admin domain
+tables above; not read by anything except the scheduler.
 
 ### RequestService (join table)
 ```
@@ -117,7 +133,8 @@ row here so the data model is exercised.
 
 ## Indexes
 
-- `Request(status, expiresAt)`, `Request(cityId)`, `Request(createdAt)`
+- `Request(status, expiresAt)`, `Request(cityId)`, `Request(createdAt)`,
+  `Request(source, createdAt)` (used by the AutoPickBot 24h cleanup query)
 - `Offer(requestId)`, `Offer(companyId)`
 - `AnalyticsEvent(companyId, type, createdAt)`,
   `AnalyticsEvent(requestId)`, `AnalyticsEvent(offerId)`

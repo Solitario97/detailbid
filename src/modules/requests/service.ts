@@ -28,7 +28,18 @@ const CLIENT_SELECT = {
   customerWhatsapp: true,
 } as const;
 
-export async function createRequest(input: CreateRequestInput) {
+export type CreateRequestOptions = {
+  // Origin tag stored on the row (see `source` on the Prisma `Request`
+  // model). Defaults to "user" — every existing call site (the public
+  // POST /api/requests route) is unaffected and keeps producing
+  // source="user" rows exactly as before this option was added. Passing
+  // "autopick_bot" (only src/modules/autopick-bot does this) never skips
+  // or branches around any of the logic below — it is the same insert,
+  // same analytics event, same everything, just tagged differently.
+  source?: string;
+};
+
+export async function createRequest(input: CreateRequestInput, options: CreateRequestOptions = {}) {
   const publicId = createPublicId();
   const token = createAccessToken();
   const accessTokenHash = hashAccessToken(token);
@@ -50,6 +61,7 @@ export async function createRequest(input: CreateRequestInput) {
       desiredDate: input.desiredDate ? new Date(input.desiredDate) : null,
       status: "ACTIVE",
       expiresAt,
+      source: options.source ?? "user",
       services: {
         create: input.serviceIds.map((serviceId) => ({ serviceId })),
       },
@@ -147,4 +159,35 @@ export async function expireStaleRequests(): Promise<number> {
     data: { status: "EXPIRED" },
   });
   return result.count;
+}
+
+/**
+ * Hard-deletes a request by id, relying on the schema's own `onDelete:
+ * Cascade` relations (RequestService, RequestImage, Offer, ContactReveal,
+ * AnalyticsEvent all cascade from Request) so no orphan rows are left
+ * behind — this is the one deletion path for a Request in the codebase;
+ * nothing else deletes a Request today. Used by the AutoPickBot 24h
+ * cleanup job (src/modules/autopick-bot/cleanup.ts) so bot-created rows
+ * are removed the exact same way any future "delete a request" feature
+ * (e.g. an admin action) would delete one.
+ *
+ * Idempotent: if the row is already gone (e.g. a concurrent app instance
+ * deleted it first), returns null instead of throwing.
+ */
+export async function deleteRequestById(id: string): Promise<{ id: string; createdAt: Date } | null> {
+  const existing = await prisma.request.findUnique({ where: { id }, select: { id: true, createdAt: true } });
+  if (!existing) return null;
+
+  try {
+    await prisma.request.delete({ where: { id } });
+    return existing;
+  } catch (err: unknown) {
+    // Prisma P2025 = "Record to delete does not exist" — another instance
+    // won the race and deleted it between our findUnique and delete calls.
+    // Treat as already-deleted rather than an error.
+    if (typeof err === "object" && err !== null && "code" in err && (err as { code?: string }).code === "P2025") {
+      return null;
+    }
+    throw err;
+  }
 }

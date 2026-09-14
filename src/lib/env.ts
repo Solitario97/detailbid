@@ -14,6 +14,12 @@ function optionalInt(name: string, fallback: number): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function optionalBool(name: string, fallback: boolean): boolean {
+  const v = process.env[name];
+  if (v === undefined || v === "") return fallback;
+  return v === "true" || v === "1";
+}
+
 // Railway's own template variable (e.g. APP_URL=${{RAILWAY_PUBLIC_DOMAIN}})
 // resolves to a bare hostname with no scheme, which crashes `new URL(...)`
 // (see src/app/layout.tsx). Normalize defensively instead of trusting the
@@ -41,4 +47,10 @@ export const env = {
   // restart, or when a new instance is scheduled. Defaults to
   // "<repo>/public/uploads" for local dev only.
   uploadsDir: optionalString("UPLOADS_DIR", path.join(process.cwd(), "public", "uploads")),
+
+  // AutoPickBot: synthetic-traffic scheduler (see src/modules/autopick-bot).
+  // Disabled by default everywhere (including tests) — must be explicitly
+  // opted into per environment.
+  autopickBotEnabled: optionalBool("AUTOPICK_BOT_ENABLED", false),
+  autopickBotTimezone: optionalString("AUTOPICK_BOT_TIMEZONE", "Asia/Almaty"),
 };

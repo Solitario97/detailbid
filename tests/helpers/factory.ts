@@ -43,7 +43,17 @@ export async function makeCompany(opts: { status?: "PENDING" | "APPROVED" | "BLO
   return user.company!;
 }
 
-export async function makeRequest(opts: { cityId?: string; expiresAt?: Date; status?: "ACTIVE" | "EXPIRED" } = {}) {
+export async function makeRequest(opts: {
+  cityId?: string;
+  expiresAt?: Date;
+  status?: "ACTIVE" | "EXPIRED";
+  source?: string;
+  createdAt?: Date;
+  carBrand?: string;
+  carModel?: string;
+  carYear?: number;
+  customerName?: string;
+} = {}) {
   const city = opts.cityId ? { id: opts.cityId } : await makeCity();
   const token = createAccessToken();
   const request = await prisma.request.create({
@@ -51,14 +61,17 @@ export async function makeRequest(opts: { cityId?: string; expiresAt?: Date; sta
       publicId: createPublicId(),
       accessTokenHash: hashAccessToken(token),
       cityId: city.id,
-      carBrand: "TestBrand",
-      carModel: "TestModel",
+      carBrand: opts.carBrand ?? "TestBrand",
+      carModel: opts.carModel ?? "TestModel",
+      carYear: opts.carYear,
       carCondition: "USED",
-      customerName: "Секретный Клиент",
+      customerName: opts.customerName ?? "Секретный Клиент",
       customerPhone: "+77079998877",
       customerWhatsapp: "+77079998877",
       status: opts.status ?? "ACTIVE",
       expiresAt: opts.expiresAt ?? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      source: opts.source ?? "user",
+      createdAt: opts.createdAt,
     },
   });
   return { request, token };

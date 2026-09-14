@@ -14,6 +14,8 @@ until the client explicitly clicks "Связаться" on that specific offer.*
 See [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md), [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md),
 [`docs/DATABASE.md`](docs/DATABASE.md) and [`docs/SECURITY.md`](docs/SECURITY.md)
 for the full product, architecture, schema, and security design.
+See [`docs/AUTOPICK_BOT.md`](docs/AUTOPICK_BOT.md) for the synthetic-traffic
+scheduler.
 
 ## Tech stack
 

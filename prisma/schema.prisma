@@ -178,6 +178,15 @@ model Request {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
+  // Origin of this request. "user" for real client-submitted requests
+  // (the default — every existing route creates requests this way).
+  // "autopick_bot" for synthetic requests created by the AutoPickBot
+  // synthetic-traffic scheduler (see src/modules/autopick-bot). This field
+  // is NEVER read by any DTO/mapper exposed to clients/companies/admin UI
+  // and NEVER changes business logic — it exists only for logs/debugging
+  // and so the bot's own 24h cleanup job can safely target its own rows.
+  source           String        @default("user")
+
   services        RequestService[]
   images          RequestImage[]
   offers          Offer[]
@@ -187,6 +196,7 @@ model Request {
   @@index([status, expiresAt])
   @@index([cityId])
   @@index([createdAt])
+  @@index([source, createdAt])
 }
 
 model RequestService {
@@ -294,4 +304,21 @@ model Notification {
   sentAt        DateTime?
 
   @@index([recipientType, recipientId])
+}
+
+// ---------------------------------------------------------------------------
+// AutoPickBot (synthetic-traffic scheduler) — see src/modules/autopick-bot.
+// ---------------------------------------------------------------------------
+
+// Distributed-lock / idempotency ledger for the twice-daily bot scheduler.
+// Every app instance's scheduler tick tries to INSERT a row for the current
+// slot's execution key (e.g. "autopick_bot:2026-09-14:10"); the unique
+// constraint on `key` guarantees at most one instance ever wins that slot,
+// even with several instances running or after a redeploy/restart replays
+// the same tick. Rows are small and kept indefinitely as an audit trail of
+// which slots ran and when — there is no cleanup for this table.
+model BotJobExecution {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  createdAt DateTime @default(now())
 }
