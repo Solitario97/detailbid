@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { UpsertOfferInput } from "./types";
 import { notifier } from "@/modules/notifications/notifier";
+import { buildTelUrl, buildWhatsAppUrl, buildInstagramUrl, buildTwoGisUrl } from "@/lib/contact-links";
 
 export class OfferError extends Error {
   constructor(message: string, public status: number) {
@@ -196,23 +197,25 @@ export async function recordOutboundClick(
   return buildOutboundUrl(type, offer.company);
 }
 
+// Thin dispatcher over the shared, framework-agnostic link builders in
+// `@/lib/contact-links` -- kept here (rather than inlined at the call site)
+// so `recordOutboundClick` still logs analytics against the exact same URL
+// shape it always has. The client now builds these same URLs itself (see
+// OfferCard) to render real <a href> links instead of waiting on this
+// endpoint before navigating; this function stays the source of truth for
+// what gets logged.
 function buildOutboundUrl(
   type: keyof typeof OUTBOUND_EVENT_TYPE,
   company: { phone: string | null; whatsapp: string | null; instagram: string | null; twoGisUrl: string | null }
 ): string | null {
   switch (type) {
     case "PHONE":
-      return company.phone ? `tel:${company.phone.replace(/[^0-9+]/g, "")}` : null;
-    case "WHATSAPP": {
-      const digits = (company.whatsapp || company.phone || "").replace(/[^0-9]/g, "");
-      return digits ? `https://wa.me/${digits}` : null;
-    }
+      return buildTelUrl(company.phone);
+    case "WHATSAPP":
+      return buildWhatsAppUrl(company.whatsapp, company.phone);
     case "INSTAGRAM":
-      if (!company.instagram) return null;
-      return company.instagram.startsWith("http")
-        ? company.instagram
-        : `https://instagram.com/${company.instagram.replace(/^@/, "")}`;
+      return buildInstagramUrl(company.instagram);
     case "TWO_GIS":
-      return company.twoGisUrl || null;
+      return buildTwoGisUrl(company.twoGisUrl);
   }
 }

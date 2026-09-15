@@ -3,20 +3,28 @@
 import * as React from "react";
 import { Phone, MessageCircle, AtSign, MapPin, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { formatKzt, formatDate, formatDurationValue } from "@/lib/utils";
+import { buildTelUrl, buildWhatsAppUrl, buildInstagramUrl, buildTwoGisUrl } from "@/lib/contact-links";
 import type { OfferPublicDTO, OfferContactDTO } from "@/modules/offers/dto";
+
+type OutboundType = "PHONE" | "WHATSAPP" | "INSTAGRAM" | "TWO_GIS";
 
 interface Props {
   offer: OfferPublicDTO;
   onReveal: (offerId: string) => Promise<OfferContactDTO | null>;
-  onOutboundClick: (offerId: string, type: "PHONE" | "WHATSAPP" | "INSTAGRAM" | "TWO_GIS") => Promise<string | null>;
+  // Fire-and-forget analytics ping — NOT awaited before navigating anywhere.
+  // The href on each contact link below is computed synchronously from
+  // already-revealed contact data, so a click always navigates immediately
+  // as part of the same user gesture (a real <a href>, never
+  // `window.open()` after an `await`). See docs/MOBILE_CONTACT_FIX.md.
+  onOutboundClick: (offerId: string, type: OutboundType) => void;
 }
 
 export function OfferCard({ offer, onReveal, onOutboundClick }: Props) {
   const [contact, setContact] = React.useState<OfferContactDTO | null>(null);
   const [revealing, setRevealing] = React.useState(false);
-  const [clicking, setClicking] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (offer.contactRevealed && !contact) {
@@ -32,17 +40,18 @@ export function OfferCard({ offer, onReveal, onOutboundClick }: Props) {
     if (c) setContact(c);
   }
 
-  async function handleOutbound(type: "PHONE" | "WHATSAPP" | "INSTAGRAM" | "TWO_GIS") {
-    setClicking(type);
-    const url = await onOutboundClick(offer.id, type);
-    setClicking(null);
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
-  }
+  // Real links, computed once contact data is available — never built from
+  // undefined/null, and hidden entirely (not rendered as a dead button)
+  // when the company hasn't provided that channel.
+  const whatsappHref = contact ? buildWhatsAppUrl(contact.whatsapp, contact.phone) : null;
+  const telHref = contact ? buildTelUrl(contact.phone) : null;
+  const instagramHref = contact ? buildInstagramUrl(contact.instagram) : null;
+  const twoGisHref = contact ? buildTwoGisUrl(contact.twoGisUrl) : null;
 
   return (
     <div className="rounded-3xl border border-border bg-surface p-6">
       <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-accent-dark text-sm font-bold text-white">
             {offer.company.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -51,8 +60,8 @@ export function OfferCard({ offer, onReveal, onOutboundClick }: Props) {
               offer.company.name[0]?.toUpperCase()
             )}
           </div>
-          <div>
-            <p className="text-sm font-semibold text-ink">{offer.company.name}</p>
+          <div className="min-w-0">
+            <p className="break-words text-sm font-semibold text-ink">{offer.company.name}</p>
             {offer.discountPercent ? <Badge variant="brand">Скидка {offer.discountPercent}%</Badge> : null}
           </div>
         </div>
@@ -76,8 +85,8 @@ export function OfferCard({ offer, onReveal, onOutboundClick }: Props) {
         </div>
       </div>
 
-      {offer.comment && <p className="mt-4 text-sm leading-relaxed text-ink-soft">{offer.comment}</p>}
-      {offer.guarantee && <p className="mt-2 text-xs text-ink-faint">Гарантия: {offer.guarantee}</p>}
+      {offer.comment && <p className="mt-4 break-words text-sm leading-relaxed text-ink-soft">{offer.comment}</p>}
+      {offer.guarantee && <p className="mt-2 break-words text-xs text-ink-faint">Гарантия: {offer.guarantee}</p>}
 
       <div className="mt-6">
         {!contact ? (
@@ -90,45 +99,45 @@ export function OfferCard({ offer, onReveal, onOutboundClick }: Props) {
             <p className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-faint">
               Связаться с {offer.company.name}
             </p>
-            {contact.whatsapp && (
-              <Button
-                variant="primary"
-                className="w-full justify-start"
-                onClick={() => handleOutbound("WHATSAPP")}
-                disabled={clicking === "WHATSAPP"}
+            {whatsappHref && (
+              <a
+                href={whatsappHref}
+                onClick={() => onOutboundClick(offer.id, "WHATSAPP")}
+                className={cn(buttonVariants({ variant: "primary" }), "w-full justify-start")}
               >
                 <MessageCircle className="h-4 w-4" /> WhatsApp
-              </Button>
+              </a>
             )}
-            {contact.phone && (
-              <Button
-                variant="dark"
-                className="w-full justify-start"
-                onClick={() => handleOutbound("PHONE")}
-                disabled={clicking === "PHONE"}
+            {telHref && (
+              <a
+                href={telHref}
+                onClick={() => onOutboundClick(offer.id, "PHONE")}
+                className={cn(buttonVariants({ variant: "dark" }), "w-full justify-start")}
               >
                 <Phone className="h-4 w-4" /> Позвонить
-              </Button>
+              </a>
             )}
-            {contact.instagram && (
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={() => handleOutbound("INSTAGRAM")}
-                disabled={clicking === "INSTAGRAM"}
+            {instagramHref && (
+              <a
+                href={instagramHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => onOutboundClick(offer.id, "INSTAGRAM")}
+                className={cn(buttonVariants({ variant: "outline" }), "w-full justify-start")}
               >
                 <AtSign className="h-4 w-4" /> Instagram
-              </Button>
+              </a>
             )}
-            {contact.twoGisUrl && (
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={() => handleOutbound("TWO_GIS")}
-                disabled={clicking === "TWO_GIS"}
+            {twoGisHref && (
+              <a
+                href={twoGisHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => onOutboundClick(offer.id, "TWO_GIS")}
+                className={cn(buttonVariants({ variant: "outline" }), "w-full justify-start")}
               >
                 <MapPin className="h-4 w-4" /> Открыть в 2GIS
-              </Button>
+              </a>
             )}
           </div>
         )}

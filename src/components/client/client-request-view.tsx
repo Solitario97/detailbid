@@ -92,22 +92,36 @@ export function ClientRequestView({
     }
   }
 
-  async function handleOutboundClick(
-    offerId: string,
-    type: "PHONE" | "WHATSAPP" | "INSTAGRAM" | "TWO_GIS"
-  ): Promise<string | null> {
+  // Fire-and-forget analytics ping for an outbound WhatsApp/Call/Instagram/
+  // 2GIS click. Deliberately NOT awaited by the caller and NOT involved in
+  // building the link the user actually navigates to (OfferCard computes
+  // that itself, synchronously, from the already-revealed contact data) --
+  // the button is a real <a href>, so the browser starts navigating the
+  // instant the click happens, in the same tick as the user gesture. Mobile
+  // Safari/Chrome had been silently blocking these as popups because the
+  // old code awaited this exact request before calling `window.open()`,
+  // which breaks "direct user activation" on those browsers.
+  //
+  // Uses sendBeacon (falling back to a keepalive fetch) so the request
+  // survives the page losing focus/unloading right after the tap, which is
+  // the normal outcome of a WhatsApp/tel link handing off to another app.
+  function handleOutboundClick(offerId: string, type: "PHONE" | "WHATSAPP" | "INSTAGRAM" | "TWO_GIS") {
+    const body = JSON.stringify({ publicId, token, type });
+    const url = `/api/client/offers/${offerId}/outbound-click`;
     try {
-      const res = await fetch(`/api/client/offers/${offerId}/outbound-click`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicId, token, type }),
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data.url ?? null;
+      if (navigator.sendBeacon) {
+        const ok = navigator.sendBeacon(url, new Blob([body], { type: "application/json" }));
+        if (ok) return;
+      }
     } catch {
-      return null;
+      // fall through to fetch
     }
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => {});
   }
 
   return (

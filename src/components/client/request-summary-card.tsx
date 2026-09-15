@@ -9,14 +9,18 @@ export function RequestSummaryCard({ request, offersCount }: { request: PublicRe
         <CarThumbnail src={request.images[0]} alt={`${request.carBrand} ${request.carModel}`} />
         <div className="min-w-0 flex-1">
           <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">Моя заявка</p>
-          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-ink">
+          <h1 className="mt-1.5 break-words text-2xl font-semibold tracking-tight text-ink">
             {request.carBrand} {request.carModel}
             {request.carYear ? ` · ${request.carYear}` : ""}
           </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink-soft">
-            <span>{request.carCondition === "NEW" ? "Новый" : "С пробегом"}</span>
-            <span aria-hidden>·</span>
-            <span>{request.city.name}</span>
+          {/* Each label below is short ("Новый"/"С пробегом", a city name) and
+              should never break mid-word on a narrow screen. whitespace-nowrap
+              keeps each one intact; flex-wrap on the row still lets a whole
+              label drop to the next line as a group if it doesn't fit. */}
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ink-soft">
+            <span className="whitespace-nowrap">{request.carCondition === "NEW" ? "Новый" : "С пробегом"}</span>
+            <span aria-hidden className="whitespace-nowrap">·</span>
+            <span className="whitespace-nowrap">{request.city.name}</span>
           </div>
         </div>
       </div>
@@ -29,7 +33,7 @@ export function RequestSummaryCard({ request, offersCount }: { request: PublicRe
         ))}
       </div>
 
-      {request.comment && <p className="mt-4 text-sm text-ink-soft">{request.comment}</p>}
+      {request.comment && <p className="mt-4 break-words text-sm text-ink-soft">{request.comment}</p>}
 
       <div className="mt-6 border-t border-border pt-5">
         {offersCount === 0 ? (

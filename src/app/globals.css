@@ -52,6 +52,19 @@
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
+/* Defense-in-depth only -- NOT the fix for horizontal overflow on mobile.
+   The actual cause (long, unbreakable company names / comments overflowing
+   their box without `overflow-wrap`, and a flex row with no `min-w-0`
+   letting that same text force the row wider than the viewport) is fixed
+   at each real usage site -- see offer-card.tsx and request-summary-card.tsx.
+   This just keeps the root elements from ever claiming more than the
+   viewport's width themselves; it does not set `overflow-x: hidden`
+   (which would silently mask a real regression instead of surfacing it). */
+html,
+body {
+  max-width: 100%;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
