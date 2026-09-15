@@ -52,9 +52,9 @@ export function Dialog({ open, onClose, title, description, children, className 
         )}
       >
         <div className="mb-5 flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight text-ink">{title}</h2>
-            {description && <p className="mt-1 text-sm text-ink-soft">{description}</p>}
+          <div className="min-w-0">
+            <h2 className="break-words text-xl font-semibold tracking-tight text-ink">{title}</h2>
+            {description && <p className="mt-1 break-words text-sm text-ink-soft">{description}</p>}
           </div>
           <button
             onClick={onClose}

@@ -7,7 +7,7 @@ export function RequestSummaryCard({ request, offersCount }: { request: PublicRe
     <div className="rounded-3xl border border-border bg-surface p-6 sm:p-8">
       <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-4">
         <CarThumbnail src={request.images[0]} alt={`${request.carBrand} ${request.carModel}`} />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 w-full flex-1">
           <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">Моя заявка</p>
           <h1 className="mt-1.5 break-words text-2xl font-semibold tracking-tight text-ink">
             {request.carBrand} {request.carModel}

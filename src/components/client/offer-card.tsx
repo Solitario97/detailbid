@@ -96,7 +96,7 @@ export function OfferCard({ offer, onReveal, onOutboundClick }: Props) {
           </Button>
         ) : (
           <div className="space-y-2">
-            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-ink-faint">
+            <p className="mb-1 break-words text-xs font-medium uppercase tracking-wide text-ink-faint">
               Связаться с {offer.company.name}
             </p>
             {whatsappHref && (

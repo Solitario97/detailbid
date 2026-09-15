@@ -18,7 +18,7 @@ export function CompanyRequestCard({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-lg font-semibold tracking-tight text-ink">
+            <h3 className="break-words text-lg font-semibold tracking-tight text-ink">
               {request.carBrand} {request.carModel}
               {request.carYear ? ` · ${request.carYear}` : ""}
             </h3>
@@ -39,7 +39,7 @@ export function CompanyRequestCard({
         ))}
       </div>
 
-      {request.comment && <p className="mt-3 text-sm text-ink-soft">{request.comment}</p>}
+      {request.comment && <p className="mt-3 break-words text-sm text-ink-soft">{request.comment}</p>}
 
       {request.images.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">
