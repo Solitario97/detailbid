@@ -3,12 +3,15 @@
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { RequestSummaryCard } from "@/components/client/request-summary-card";
 import { OfferCard } from "@/components/client/offer-card";
 import { Select } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { PublicRequestDTO } from "@/modules/requests/dto";
 import type { OfferPublicDTO, OfferContactDTO } from "@/modules/offers/dto";
-import { saveActiveRequest } from "@/lib/client-request-storage";
+import { saveActiveRequest, clearActiveRequest } from "@/lib/client-request-storage";
 
 type Sort = "recommended" | "price_asc" | "price_desc" | "soonest" | "fastest";
 
@@ -33,9 +36,18 @@ export function ClientRequestView({
   initialRequest: PublicRequestDTO;
   initialOffers: OfferPublicDTO[];
 }) {
+  const router = useRouter();
   const [offers, setOffers] = React.useState(initialOffers);
   const [sort, setSort] = React.useState<Sort>("recommended");
   const seenImpressions = React.useRef(new Set<string>());
+  const [newRequestConfirmOpen, setNewRequestConfirmOpen] = React.useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false);
+  // Set the instant deletion succeeds, so the poll (which fires on its own
+  // timer, independent of React's render cycle) can't overwrite state with
+  // stale offers or hit the now-404 endpoint during the brief window before
+  // router.replace() actually unmounts this component.
+  const deletedRef = React.useRef(false);
+  const pollIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Keep the persistent "current active request" pointer fresh every time
   // this page is viewed — covers a visitor who opens a `/r/...?t=...` link
@@ -47,20 +59,47 @@ export function ClientRequestView({
   React.useEffect(() => {
     let cancelled = false;
     const poll = async () => {
+      if (deletedRef.current) return;
       try {
         const res = await fetch(`/api/client/requests/${publicId}/offers?t=${encodeURIComponent(token)}`);
         if (!res.ok) return;
         const data = await res.json();
-        if (!cancelled) setOffers(data.offers);
+        if (!cancelled && !deletedRef.current) setOffers(data.offers);
       } catch {
         // network hiccup — next poll will retry
       }
     };
     const interval = setInterval(poll, POLL_INTERVAL_MS);
+    pollIntervalRef.current = interval;
     return () => {
       cancelled = true;
       clearInterval(interval);
     };
+  }, [publicId, token]);
+
+  // Defends the "delete a request, hit browser Back" scenario: if this page
+  // is ever restored from the browser's back/forward cache (a full bfcache
+  // restore skips React entirely, so nothing above would re-run), re-check
+  // with the backend that the request/token are still valid and bounce to
+  // the homepage if not. A hard `location.replace` is used deliberately —
+  // a bfcache restore bypasses the Next.js router, so this can't rely on it.
+  React.useEffect(() => {
+    function handlePageShow(event: PageTransitionEvent) {
+      if (!event.persisted) return;
+      fetch(`/api/client/requests/${publicId}?t=${encodeURIComponent(token)}`)
+        .then((res) => {
+          if (!res.ok) {
+            clearActiveRequest();
+            window.location.replace("/");
+          }
+        })
+        .catch(() => {
+          // network hiccup on a Back-navigation edge case — fail open and
+          // leave the (still possibly-valid) cached page as-is.
+        });
+    }
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
   }, [publicId, token]);
 
   React.useEffect(() => {
@@ -77,6 +116,38 @@ export function ClientRequestView({
   }, [offers, publicId, token]);
 
   const sortedOffers = React.useMemo(() => sortOffers(offers, sort), [offers, sort]);
+
+  // Backs BOTH "Новая заявка" and "Удалить заявку" — they are the exact
+  // same backend action (delete this request via the existing
+  // deleteRequestById service, the one deletion path in the codebase);
+  // only the confirmation copy differs between the two dialogs below.
+  // Returns an error message on failure (dialog stays open, shows it,
+  // re-enables its buttons) or null on success (caller navigates away).
+  async function handleDeleteRequest(): Promise<string | null> {
+    try {
+      const res = await fetch(`/api/client/requests/${publicId}/delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        return data?.error ?? "Не удалось удалить заявку. Попробуйте ещё раз.";
+      }
+    } catch {
+      return "Не удалось удалить заявку. Попробуйте ещё раз.";
+    }
+
+    // Success: stop polling/realtime immediately (don't wait for unmount),
+    // clear the persistent restore pointer so HomeGate can't bring the now-
+    // deleted request back, then leave the request page entirely — replace
+    // (not push) so browser Back can't land on it either.
+    deletedRef.current = true;
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    clearActiveRequest();
+    router.replace("/");
+    return null;
+  }
 
   async function handleReveal(offerId: string): Promise<OfferContactDTO | null> {
     try {
@@ -127,15 +198,22 @@ export function ClientRequestView({
   return (
     <main className="min-h-screen bg-background pb-16">
       <div className="border-b border-border bg-surface">
-        <div className="mx-auto flex h-16 max-w-3xl items-center px-4">
+        <div className="mx-auto flex h-16 max-w-3xl items-center justify-between gap-3 px-4">
           <Link href="/" className="flex items-center gap-2">
             <Image src="/autopick-logo.png" alt="AutoPick" width={56} height={56} className="rounded-xl object-contain" />
           </Link>
+          <Button type="button" variant="outline" size="sm" onClick={() => setNewRequestConfirmOpen(true)}>
+            Новая заявка
+          </Button>
         </div>
       </div>
 
       <div className="mx-auto max-w-3xl px-4 py-8">
-        <RequestSummaryCard request={initialRequest} offersCount={offers.length} />
+        <RequestSummaryCard
+          request={initialRequest}
+          offersCount={offers.length}
+          onDeleteClick={() => setDeleteConfirmOpen(true)}
+        />
 
         <div className="mt-10 flex items-center justify-between">
           <h2 className="text-lg font-semibold tracking-tight text-ink">Предложения компаний</h2>
@@ -166,6 +244,24 @@ export function ClientRequestView({
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={newRequestConfirmOpen}
+        onClose={() => setNewRequestConfirmOpen(false)}
+        title="Создать новую заявку?"
+        description="Текущая заявка и полученные по ней предложения будут удалены. После этого вы сможете создать новую заявку."
+        confirmLabel="Удалить и создать новую"
+        onConfirm={handleDeleteRequest}
+      />
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        title="Удалить заявку?"
+        description="Заявка и полученные предложения будут удалены. Это действие нельзя отменить."
+        confirmLabel="Удалить заявку"
+        onConfirm={handleDeleteRequest}
+      />
     </main>
   );
 }

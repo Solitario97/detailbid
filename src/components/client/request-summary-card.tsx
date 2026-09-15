@@ -2,7 +2,16 @@ import { Badge } from "@/components/ui/badge";
 import { CarThumbnail } from "@/components/ui/car-thumbnail";
 import type { PublicRequestDTO } from "@/modules/requests/dto";
 
-export function RequestSummaryCard({ request, offersCount }: { request: PublicRequestDTO; offersCount: number }) {
+export function RequestSummaryCard({
+  request,
+  offersCount,
+  onDeleteClick,
+}: {
+  request: PublicRequestDTO;
+  offersCount: number;
+  /** Optional — omit to render the card without a delete action. */
+  onDeleteClick?: () => void;
+}) {
   return (
     <div className="rounded-3xl border border-border bg-surface p-6 sm:p-8">
       <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-4">
@@ -35,7 +44,7 @@ export function RequestSummaryCard({ request, offersCount }: { request: PublicRe
 
       {request.comment && <p className="mt-4 break-words text-sm text-ink-soft">{request.comment}</p>}
 
-      <div className="mt-6 border-t border-border pt-5">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5">
         {offersCount === 0 ? (
           <p className="flex items-center gap-2 text-sm text-ink-soft">
             <span className="relative flex h-2 w-2">
@@ -48,6 +57,15 @@ export function RequestSummaryCard({ request, offersCount }: { request: PublicRe
           <p className="text-sm font-medium text-ink">
             Получено предложений: <span className="text-brand">{offersCount}</span>
           </p>
+        )}
+        {onDeleteClick && (
+          <button
+            type="button"
+            onClick={onDeleteClick}
+            className="text-sm font-medium text-danger hover:underline"
+          >
+            Удалить заявку
+          </button>
         )}
       </div>
     </div>
